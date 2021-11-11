@@ -45,6 +45,7 @@
         name: pip
         state: latest
         extra_args: --upgrade
+        executable: /usr/bin/python3
 
     - name: Install PyMySQL
       pip:
@@ -53,6 +54,7 @@
           - pymysql
         state: present
         extra_args: --upgrade
+        executable: /usr/bin/python3
 
     - name: Start MariaDB
       become: yes
