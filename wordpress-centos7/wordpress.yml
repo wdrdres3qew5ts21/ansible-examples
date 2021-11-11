@@ -4,137 +4,132 @@
   become: yes
   # remote_user: root
   tasks:
-   - name: Upgrade all packages
-     become: yes
-     yum:
-      name: '*'
-      state: latest
-      
-   - name: Install Apache & PHP & MySQL
-     yum: 
-      name: 
-       - epel-release
-       - httpd
-       - mariadb
-       - mariadb-server
-       - php
-       - php-common
-       - php-mysql
-       - php-gd
-       - php-xml
-       - php-mbstring
-       - php-mcrypt
-       - php-xmlrpc
-       - unzip
-       - wget
-       - python-setuptools
-       - python-pip
-      state: present
+    - name: Upgrade all packages
+      yum:
+        name: "*"
+        state: latest
+
+    - name: Install Apache & PHP & MySQL
+      yum:
+        name:
+          - epel-release
+          - httpd
+          - mariadb
+          - mariadb-server
+          - php
+          - php-common
+          - php-mysql
+          - php-gd
+          - php-xml
+          - php-mbstring
+          - php-mcrypt
+          - php-xmlrpc
+          - unzip
+          - wget
+          - python-setuptools
+          - python-pip
+        state: present
+        become: yes
+
+    - name: Start Apache Web Server
       become: yes
-   
-   - name: Start Apache Web Server
-     become: yes
-     service:
-      name: httpd
-      state: started 
-      enabled: yes
+      service:
+        name: httpd
+        state: started
+        enabled: yes
 
+    - name: Install PyMySQL
+      become: yes
+      pip:
+        name:
+          - setuptools
+          - pymysql
+        state: present
 
-   - name: Install PyMySQL
-     become: yes
-     pip:
-      name: 
-       - setuptools
-       - pymysql
-      state: present
-      
+    - name: Start MariaDB
+      become: yes
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
 
-   - name: Start MariaDB
-     become: yes
-     service:
-      name: mariadb
-      state: started
-      enabled: yes
-      
+    - name: Open 3306 PORT
+      become: yes
+      firewalld:
+        port: 3306/tcp
+        permanent: yes
+        state: enabled
 
-   - name: Open 3306 PORT
-     become: yes
-     firewalld:
-      port: 3306/tcp
-      permanent: yes
-      state: enabled
+    - name: Execute MySQL Privilleges
+      shell: |
+        mysqladmin password "abc"
+        echo "DELETE FROM mysql.user WHERE User='';" | mysql -uroot -p"abc"
+        echo "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" | mysql -uroot -p"abc"
+        echo "DROP DATABASE test;" | mysql -uroot -p"abc"
+        echo "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';" | mysql -uroot -p"abc"
+        echo "FLUSH PRIVILEGES;" | mysql -uroot -p"abc"
+        echo "CREATE DATABASE wordpress" | mysql -uroot -p"abc"
+        echo "GRANT ALL PRIVILEGES on wordpress.* to 'ansible'@'localhost' identified by 'mypassword';" | mysql -uroot -p"abc"
+        echo "FLUSH PRIVILEGES;" | mysql -uroot -p"abc"
+    - name: Open Firewall PORT 80
+      firewalld:
+        service: http
+        permanent: yes
+        state: enabled
+        immediate: yes
 
-   - name: Execute MySQL Privilleges
-     shell: |
-      mysqladmin password "abc"
-      echo "DELETE FROM mysql.user WHERE User='';" | mysql -uroot -p"abc"
-      echo "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" | mysql -uroot -p"abc"
-      echo "DROP DATABASE test;" | mysql -uroot -p"abc"
-      echo "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';" | mysql -uroot -p"abc"
-      echo "FLUSH PRIVILEGES;" | mysql -uroot -p"abc"
-      echo "CREATE DATABASE wordpress" | mysql -uroot -p"abc"
-      echo "GRANT ALL PRIVILEGES on wordpress.* to 'ansible'@'localhost' identified by 'mypassword';" | mysql -uroot -p"abc"
-      echo "FLUSH PRIVILEGES;" | mysql -uroot -p"abc"
-   - name: Open Firewall PORT 80
-     firewalld:
-      service: http
-      permanent: yes
-      state: enabled
-      immediate: yes
+    - name: Download Wordpress Version 5.0
+      get_url:
+        url: https://wordpress.org/wordpress-5.0.tar.gz
+        dest: /home/centos
 
-   - name: Download Wordpress Version 5.0 
-     get_url:
-      url:  https://wordpress.org/wordpress-5.0.tar.gz
-      dest: /home/centos
+    - name: Unarchive word press
+      unarchive:
+        remote_src: yes
+        src: /home/centos/wordpress-5.0.tar.gz
+        dest: /var/www/html
 
-   - name: Unarchive word press
-     unarchive:
-      remote_src: yes
-      src: /home/centos/wordpress-5.0.tar.gz 
-      dest: /var/www/html
+    - name: Change File Owner of unarchived Wordopress
+      file:
+        path: /var/www/html/
+        owner: apache
+        group: apache
+        recurse: yes
 
-   - name: Change File Owner of unarchived Wordopress
-     file:
-      path: /var/www/html/
-      owner: apache
-      group: apache
-      recurse: yes
+    - name: Change Wordpress directory permission
+      file:
+        path: /var/www/html/wordpress
+        recurse: yes
+        mode: "0755"
 
-   - name: Change Wordpress directory permission
-     file:
-      path: /var/www/html/wordpress
-      recurse: yes
-      mode: '0755'
-      
-   - name: Create Wordpress directory
-     file:
-      path: /var/www/html/wordpress/wp-content/uploads
-      state: directory
-      recurse: yes
-   
-   - name: Rename PHP Config file
-     command: mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php 
+    - name: Create Wordpress directory
+      file:
+        path: /var/www/html/wordpress/wp-content/uploads
+        state: directory
+        recurse: yes
 
-   - name: Set Wordpress Database name
-     lineinfile:
-       path: /var/www/html/wordpress/wp-config.php 
-       line: define('DB_NAME', 'wordpress');
-       regexp: 'database_name_here'
+    - name: Rename PHP Config file
+      command: mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php
 
-   - name: Set Wordpress Username
-     lineinfile:
-       path: /var/www/html/wordpress/wp-config.php
-       line: define('DB_USER', 'ansible'); 
-       regexp: 'username_here'
+    - name: Set Wordpress Database name
+      lineinfile:
+        path: /var/www/html/wordpress/wp-config.php
+        line: define('DB_NAME', 'wordpress');
+        regexp: "database_name_here"
 
-   - name: Set Wordpress Password
-     lineinfile:
-       path: /var/www/html/wordpress/wp-config.php
-       line: define('DB_PASSWORD', 'mypassword');
-       regexp: 'password_here'
+    - name: Set Wordpress Username
+      lineinfile:
+        path: /var/www/html/wordpress/wp-config.php
+        line: define('DB_USER', 'ansible');
+        regexp: "username_here"
 
-   - name: Relaod Apache
-     service:
-      name: httpd
-      state: reloaded   
+    - name: Set Wordpress Password
+      lineinfile:
+        path: /var/www/html/wordpress/wp-config.php
+        line: define('DB_PASSWORD', 'mypassword');
+        regexp: "password_here"
 
+    - name: Relaod Apache
+      service:
+        name: httpd
+        state: reloaded
