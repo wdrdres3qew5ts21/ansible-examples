@@ -1,9 +1,11 @@
 ---
 - name: wordpess-playbook
   hosts: all
+  become: yes
   # remote_user: root
   tasks:
    - name: Upgrade all packages
+     become: yes
      yum:
       name: '*'
       state: latest
@@ -28,8 +30,10 @@
        - python-setuptools
        - python-pip
       state: present
+      become: yes
    
    - name: Start Apache Web Server
+     become: yes
      service:
       name: httpd
       state: started 
@@ -37,19 +41,24 @@
 
 
    - name: Install PyMySQL
+     become: yes
      pip:
       name: 
        - setuptools
        - pymysql
       state: present
+      
 
    - name: Start MariaDB
+     become: yes
      service:
       name: mariadb
       state: started
       enabled: yes
+      
 
    - name: Open 3306 PORT
+     become: yes
      firewalld:
       port: 3306/tcp
       permanent: yes
