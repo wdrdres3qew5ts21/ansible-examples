@@ -10,6 +10,7 @@
         state: latest
 
     - name: Install Apache & PHP & MySQL
+      become: yes
       yum:
         name:
           - epel-release
@@ -29,7 +30,6 @@
           - python-setuptools
           - python-pip
         state: present
-        become: yes
 
     - name: Start Apache Web Server
       become: yes
@@ -39,7 +39,6 @@
         enabled: yes
 
     - name: Install PyMySQL
-      become: yes
       pip:
         name:
           - setuptools
