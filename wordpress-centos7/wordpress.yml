@@ -63,6 +63,13 @@
         state: started
         enabled: yes
 
+    - name: Start Firewalld
+      become: yes
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
     - name: Open 3306 PORT
       become: yes
       firewalld:
