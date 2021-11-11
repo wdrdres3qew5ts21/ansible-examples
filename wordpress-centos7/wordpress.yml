@@ -98,12 +98,12 @@
     - name: Download Wordpress Version 5.0
       get_url:
         url: https://wordpress.org/wordpress-5.0.tar.gz
-        dest: /home/centos
+        dest: /home/azureuser
 
     - name: Unarchive word press
       unarchive:
         remote_src: yes
-        src: /home/centos/wordpress-5.0.tar.gz
+        src: /home/azureuser/wordpress-5.0.tar.gz
         dest: /var/www/html
 
     - name: Change File Owner of unarchived Wordopress
