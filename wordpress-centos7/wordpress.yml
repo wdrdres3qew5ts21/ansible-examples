@@ -1,6 +1,6 @@
 ---
 - name: wordpess-playbook
-  # hosts: wordpress
+  hosts: all
   # remote_user: root
   tasks:
    - name: Install Apache & PHP & MySQL
