@@ -38,6 +38,11 @@
         state: started
         enabled: yes
 
+    - name: Upgrade PiP
+      pip: 
+        name: pip
+        state: latest
+
     - name: Install PyMySQL
       pip:
         name:
