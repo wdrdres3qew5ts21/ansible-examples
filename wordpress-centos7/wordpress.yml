@@ -11,6 +11,7 @@
    - name: Install Apache & PHP & MySQL
      yum: 
       name: 
+       - epel-release
        - httpd
        - mariadb
        - mariadb-server
